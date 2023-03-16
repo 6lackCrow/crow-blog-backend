@@ -2,6 +2,7 @@ package config
 
 import (
 	configEntity "crow-blog-backend/src/config/entity"
+	"crow-blog-backend/src/entity"
 	panicUtil "crow-blog-backend/src/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -40,7 +41,7 @@ func initDataSource() {
 			SlowThreshold:             time.Second,   // 慢 SQL 阈值
 			LogLevel:                  logger.Silent, // 日志级别
 			IgnoreRecordNotFoundError: true,          // 忽略ErrRecordNotFound（记录未找到）错误
-			Colorful:                  false,         // 禁用彩色打印
+			Colorful:                  true,          // 是否使用彩色打印
 		})
 
 	dbInstance, dbErr := gorm.Open(mysql.Open(dsn), &gorm.Config{
@@ -49,6 +50,16 @@ func initDataSource() {
 	if dbErr != nil {
 		panicUtil.CustomPanic("Failed to init database instance", dbErr)
 	}
+
+	if err := dbInstance.AutoMigrate(
+		&entity.User{},
+		&entity.Link{},
+		&entity.UserAuth{},
+		&entity.About{},
+	); err != nil {
+		panicUtil.CustomPanic("Failed to AutoMigrate", err)
+	}
+
 	db = dbInstance
 }
 
