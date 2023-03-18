@@ -2,8 +2,10 @@ package config
 
 import (
 	configEntity "crow-blog-backend/src/config/entity"
+	authType "crow-blog-backend/src/consts"
 	"crow-blog-backend/src/entity"
-	panicUtil "crow-blog-backend/src/utils"
+	encryptUtil "crow-blog-backend/src/utils/encrypt"
+	panicUtil "crow-blog-backend/src/utils/painc"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -14,6 +16,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -120,8 +124,74 @@ func GetGlobalLogger() *zap.SugaredLogger {
 	return globalLogger
 }
 
+func initSysUser() {
+
+	accountRegexp, err := regexp.Compile("^[a-zA-Z][a-zA-Z0-9_]{4,15}$")
+	if err != nil {
+		panicUtil.CustomPanic("Failed to compile account regexp", err)
+	}
+	passwordRegexp, err := regexp.Compile("^[a-zA-Z]\\w{5,17}$")
+	if err != nil {
+		panicUtil.CustomPanic("Failed to compile password regexp", err)
+	}
+	emailRegexp, err := regexp.Compile("^[a-zA-Z0-9]+([-_.][A-Za-zd]+)*@([a-zA-Z0-9]+[-.])+[A-Za-zd]{2,5}$")
+	if err != nil {
+		panicUtil.CustomPanic("Failed to compile email regexp", err)
+	}
+
+	var userCount int64
+	db.Model(&entity.User{}).Count(&userCount)
+	if userCount != 0 {
+		return
+	}
+	//用户数为零 判断信息是否均不为空且符合需求
+	sysUser := envConfig.SysUser
+	if !accountRegexp.MatchString(sysUser.Account) ||
+		!passwordRegexp.MatchString(sysUser.Password) ||
+		!emailRegexp.MatchString(sysUser.Email) ||
+		len(strings.Trim(sysUser.Nickname, " ")) == 0 {
+		return
+	}
+
+	if trErr := db.Transaction(func(trDb *gorm.DB) error {
+		user := &entity.User{
+			Nickname: sysUser.Nickname,
+		}
+		db.Create(user)
+
+		// 加密密码
+		encryptPassword, encryptErr := encryptUtil.EncryptPassword(sysUser.Password)
+		if encryptErr != nil {
+			return encryptErr
+		}
+
+		accountUserAuth := entity.UserAuth{
+			Type:       authType.Account,
+			UserId:     user.ID,
+			Identifier: sysUser.Account,
+			Credential: encryptPassword,
+			CreatedAt:  time.Now(),
+		}
+
+		emailAuth := entity.UserAuth{
+			Type:       authType.Email,
+			UserId:     user.ID,
+			Identifier: sysUser.Email,
+			Credential: encryptPassword,
+			CreatedAt:  time.Now(),
+		}
+		auths := make([]entity.UserAuth, 0)
+		auths = append(auths, accountUserAuth, emailAuth)
+		return db.CreateInBatches(auths, len(auths)).Error
+	}); trErr != nil {
+		globalLogger.Error("创建系统用户失败")
+	}
+
+}
+
 func InitConfig() {
 	initEnvConfig()
 	initDataSource()
 	initGlobalLogger()
+	initSysUser()
 }

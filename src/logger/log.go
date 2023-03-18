@@ -1,4 +1,4 @@
-package logger
+package globalLogger
 
 import "crow-blog-backend/src/config"
 

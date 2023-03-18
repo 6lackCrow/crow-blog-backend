@@ -2,7 +2,7 @@ package main
 
 import (
 	"crow-blog-backend/src/config"
-	panicUtil "crow-blog-backend/src/utils"
+	panicUtil "crow-blog-backend/src/utils/painc"
 	"github.com/kataras/iris/v12"
 )
 
