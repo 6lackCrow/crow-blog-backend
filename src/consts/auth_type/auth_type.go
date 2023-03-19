@@ -1,4 +1,4 @@
-package authType
+package auth_type
 
 const (
 	Account = iota

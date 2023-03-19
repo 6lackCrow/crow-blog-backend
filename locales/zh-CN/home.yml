@@ -1,0 +1,4 @@
+result:
+  success: 成功
+  error:
+    base: 错误

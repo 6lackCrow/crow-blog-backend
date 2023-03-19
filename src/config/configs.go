@@ -2,10 +2,11 @@ package config
 
 import (
 	configEntity "crow-blog-backend/src/config/entity"
-	authType "crow-blog-backend/src/consts"
+	authType "crow-blog-backend/src/consts/auth_type"
 	"crow-blog-backend/src/entity"
 	encryptUtil "crow-blog-backend/src/utils/encrypt"
 	panicUtil "crow-blog-backend/src/utils/painc"
+	"github.com/kataras/iris/v12"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -24,6 +25,16 @@ import (
 var envConfig = &configEntity.EnvConfig{}
 var db *gorm.DB
 var globalLogger *zap.SugaredLogger
+
+var app *iris.Application
+
+func SetApp(appInstance *iris.Application) {
+	app = appInstance
+}
+
+func GetApp() *iris.Application {
+	return app
+}
 
 func initEnvConfig() {
 	file, err := os.ReadFile("./application.yml")
@@ -186,7 +197,6 @@ func initSysUser() {
 	}); trErr != nil {
 		globalLogger.Error("创建系统用户失败")
 	}
-
 }
 
 func InitConfig() {
