@@ -3,7 +3,6 @@ package controller
 import (
 	"crow-blog-backend/src/service"
 	"crow-blog-backend/src/utils/result"
-	"fmt"
 	"github.com/kataras/iris/v12"
 )
 
@@ -19,7 +18,8 @@ func NewTestController() *TestController {
 }
 
 func (p *TestController) Get() *result.Result {
-	fmt.Println("进入响应")
-
-	return result.Success("", p.TestService.GetTestArr())
+	resultFn := func() *result.Result {
+		return result.Success(p.Ctx.Values().GetString("language"), p.TestService.GetTestArr())
+	}
+	return result.WriteLogAndCacheableResult(p.Ctx, "", resultFn)
 }
