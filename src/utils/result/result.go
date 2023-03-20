@@ -4,6 +4,7 @@ import (
 	"crow-blog-backend/src/config"
 	resultType "crow-blog-backend/src/consts/result_type"
 	globalLogger "crow-blog-backend/src/logger"
+	"encoding/json"
 	"github.com/kataras/iris/v12"
 	"strings"
 	"time"
@@ -93,18 +94,21 @@ func WriteLogResult(ctx iris.Context, fn func() *Result) *Result {
 		bodyStr = "null"
 	}
 
-	template := "reqIp: %s, reqUrl: %s, reqBody: %s, reqDateTime: %s, respDateTime: %s, costTime: %d"
+	template := "reqIp: %s, reqUrl: %s, reqBody: %s, respBody: %s, reqDateTime: %s, respDateTime: %s, costTime: %d"
+
+	jsonBytes, _ := json.Marshal(fnResult)
 
 	if fnResult.Code == resultType.Success {
 		// 记录成功日志
-		globalLogger.Infof(template, reqIp, fullUri, bodyStr, requestDateTime, responseDateTime, end-start)
+		globalLogger.Infof(template, reqIp, fullUri, bodyStr, string(jsonBytes), requestDateTime, responseDateTime, end-start)
 	} else if fnResult.Code == resultType.Error {
 		// 记录系统级别的错误
-		globalLogger.Errorf(template, reqIp, fullUri, bodyStr, requestDateTime, responseDateTime, end-start)
+		globalLogger.Errorf(template, reqIp, fullUri, bodyStr, string(jsonBytes), requestDateTime, responseDateTime, end-start)
 	} else {
 		// 记录业务级别的错误
-		globalLogger.Warnf(template, reqIp, fullUri, bodyStr, requestDateTime, responseDateTime, end-start)
+		globalLogger.Warnf(template, reqIp, fullUri, bodyStr, string(jsonBytes), requestDateTime, responseDateTime, end-start)
 	}
+
 	return fnResult
 }
 
