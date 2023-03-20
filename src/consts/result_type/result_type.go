@@ -6,5 +6,10 @@ const (
 )
 
 var resultMap = map[int]string{
-	Success: "success",
+	Success: "result.success",
+	Error:   "result.error.base",
+}
+
+func GetKeyByCode(code int) string {
+	return resultMap[code]
 }

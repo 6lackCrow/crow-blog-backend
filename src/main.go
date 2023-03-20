@@ -3,8 +3,8 @@ package main
 import (
 	"crow-blog-backend/src/config"
 	globalLogger "crow-blog-backend/src/logger"
+	"crow-blog-backend/src/route"
 	panicUtil "crow-blog-backend/src/utils/painc"
-	"fmt"
 	"github.com/kataras/iris/v12"
 )
 
@@ -15,12 +15,9 @@ func main() {
 		globalLogger.Error("Failed load i18n")
 	}
 	irisInstance.I18n.SetDefault("zh-CN")
-
 	config.SetApp(irisInstance)
-
-	fmt.Println(config.GetApp().I18n.Tr("en-US", "result.error.base"))
-
 	envConfig := config.GetEnvConfig()
+	route.InitRoute(irisInstance)
 	if err := irisInstance.Listen(":" + envConfig.Server.Port); err != nil {
 		panicUtil.CustomPanic("Listen on port failed", err)
 	}
