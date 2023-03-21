@@ -15,4 +15,14 @@ type EnvConfig struct {
 		Email    string `yaml:"email"`
 		Nickname string `yaml:"nickname"`
 	} `yaml:"sys-user"`
+
+	Cache struct {
+		Use   bool `yaml:"use"`
+		Redis struct {
+			Address  string `yaml:"address"`
+			Password string `yaml:"password"`
+			Db       int    `yaml:"db"`
+			PoolSize int    `yaml:"pool-size"`
+		} `yaml:"redis"`
+	} `yaml:"cache"`
 }

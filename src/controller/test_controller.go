@@ -17,9 +17,23 @@ func NewTestController() *TestController {
 	}
 }
 
-func (p *TestController) Get() *result.Result {
-	resultFn := func() *result.Result {
-		return result.Success(p.Ctx.Values().GetString("language"), p.TestService.GetTestArr())
-	}
-	return result.WriteLogResult(p.Ctx, resultFn)
+func (p *TestController) GetArr() *result.Result {
+	return result.WriteLogResult(p.Ctx, func() *result.Result {
+
+		return result.Success(p.Ctx.Values().GetString("language"), p.TestService.GetTestArr("arr"))
+	})
+}
+
+func (p *TestController) GetStr() *result.Result {
+	return result.WriteLogResult(p.Ctx, func() *result.Result {
+		return result.Success(p.Ctx.Values().GetString("language"), p.TestService.GetTestStr("str"))
+	})
+}
+
+func (p *TestController) GetNum() *result.Result {
+	return result.WriteLogResult(p.Ctx, func() *result.Result {
+
+		return result.Success(p.Ctx.Values().GetString("language"), p.TestService.GetTestNum("num"))
+	})
+
 }

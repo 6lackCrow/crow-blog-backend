@@ -6,7 +6,9 @@ import (
 	"crow-blog-backend/src/entity"
 	encryptUtil "crow-blog-backend/src/utils/encrypt"
 	panicUtil "crow-blog-backend/src/utils/painc"
+	"fmt"
 	"github.com/kataras/iris/v12"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -18,6 +20,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -25,6 +28,7 @@ import (
 var envConfig = &configEntity.EnvConfig{}
 var db *gorm.DB
 var globalLogger *zap.SugaredLogger
+var redisDb *redis.Client
 
 var app *iris.Application
 
@@ -200,9 +204,36 @@ func initSysUser() {
 	}
 }
 
+func initCache() {
+	cache := envConfig.Cache
+	if !cache.Use {
+		return
+	}
+	cpuNum := runtime.NumCPU()
+
+	fmt.Println(cache.Redis)
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:         cache.Redis.Address,
+		Password:     cache.Redis.Password, // 没有密码，默认值
+		DB:           cache.Redis.Db,       // 默认DB 0
+		MaxIdleConns: cpuNum * 2,
+		MinIdleConns: 0,
+	})
+	redisDb = rdb
+
+}
+
+func GetRedisClient() *redis.Client {
+	return redisDb
+}
+
 func InitConfig() {
 	initEnvConfig()
 	initDataSource()
 	initGlobalLogger()
 	initSysUser()
+	initCache()
+
+	fmt.Println(envConfig)
 }
