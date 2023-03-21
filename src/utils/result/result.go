@@ -2,6 +2,7 @@ package result
 
 import (
 	"crow-blog-backend/src/config"
+	"crow-blog-backend/src/consts/cache_opt"
 	resultType "crow-blog-backend/src/consts/result_type"
 	globalLogger "crow-blog-backend/src/logger"
 	"encoding/json"
@@ -48,16 +49,24 @@ func FailedWithConst(language string, constCode int, args ...string) *Result {
 	}
 }
 
-func Cacheable(language, cacheKey string, fn func() *Result) *Result {
+func Cacheable(language, cacheKey string, cacheOpt int, fn func() *Result) *Result {
 	tmpResult := &Result{}
-	if cacheKey != "" {
-		// 尝试取缓存
-		tmpResult.Code = resultType.Success
-		tmpResult.Message = config.GetApp().I18n.Tr(language, resultType.GetKeyByCode(resultType.Success))
-		tmpResult.Data = "缓存"
-	} else {
+	switch cacheOpt {
+	case cache_opt.Select:
+		if cacheKey != "" {
+			// 尝试取缓存
+			tmpResult.Code = resultType.Success
+			tmpResult.Message = config.GetApp().I18n.Tr(language, resultType.GetKeyByCode(resultType.Success))
+			tmpResult.Data = "缓存"
+		} else {
+			tmpResult = fn()
+			// 写入缓存
+		}
+	case cache_opt.Remove:
+		//一般用于修改 更新 删除方法 - 删除对应的缓存
 		tmpResult = fn()
-		// 写入缓存
+	default:
+		tmpResult = fn() // 不操作缓存,直接执行相应逻辑
 	}
 	return tmpResult
 }
@@ -112,8 +121,8 @@ func WriteLogResult(ctx iris.Context, fn func() *Result) *Result {
 	return fnResult
 }
 
-func WriteLogAndCacheableResult(ctx iris.Context, cacheKey string, fn func() *Result) *Result {
+func WriteLogAndCacheableResult(ctx iris.Context, cacheKey string, cacheOpt int, fn func() *Result) *Result {
 	return WriteLogResult(ctx, func() *Result {
-		return Cacheable(ctx.Values().GetString("language"), cacheKey, fn)
+		return Cacheable(ctx.Values().GetString("language"), cacheKey, cacheOpt, fn)
 	})
 }

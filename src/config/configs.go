@@ -101,6 +101,7 @@ func getEncoder() zapcore.Encoder {
 }
 func initGlobalLogger() {
 	encoder := getEncoder()
+	// 方便测试时观察日志打印，打包后不需要控制台输出
 	infoWriter := getLogWriter("./logs/blog.info.log", true)
 	warnWriter := getLogWriter("./logs/blog.warn.log", false)
 	errorWriter := getLogWriter("./logs/blog.error.log", false)
