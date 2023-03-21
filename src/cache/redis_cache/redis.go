@@ -1,8 +1,10 @@
 package redis_cache
 
 import (
+	"bytes"
 	"context"
 	config "crow-blog-backend/src/config"
+	"encoding/gob"
 	"time"
 )
 
@@ -16,6 +18,18 @@ func GetScan(key string, v interface{}) error {
 	client := config.GetRedisClient()
 	ctx := context.Background()
 	return client.Get(ctx, key).Scan(v)
+}
+
+func GetDecode(key string, v interface{}) error {
+	client := config.GetRedisClient()
+	ctx := context.Background()
+	result, err := client.Get(ctx, key).Bytes()
+	if err != nil {
+		return err
+	}
+	dec := gob.NewDecoder(bytes.NewReader(result))
+	err = dec.Decode(v)
+	return err
 }
 
 func GetSet(key string, value interface{}) (string, error) {

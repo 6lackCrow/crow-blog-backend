@@ -1,15 +1,18 @@
 package cache
 
 import (
+	"bytes"
 	"crow-blog-backend/src/cache/redis_cache"
 	"crow-blog-backend/src/config"
 	"crow-blog-backend/src/consts/cache_opt"
 	globalLogger "crow-blog-backend/src/logger"
+	"encoding/gob"
+	"fmt"
 	"github.com/redis/go-redis/v9"
 	"time"
 )
 
-var cacheLockChan = make(chan bool)
+var cacheLockChanMap = map[string]chan bool{}
 
 func getLock(ch chan bool) bool {
 	return <-ch
@@ -27,7 +30,7 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 	var tmp T
 	switch cacheOpt {
 	case cache_opt.Select:
-		err := redis_cache.GetScan(cacheKey, &tmp)
+		err := redis_cache.GetDecode(cacheKey, &tmp)
 
 		switch {
 		case err == redis.Nil:
@@ -46,23 +49,37 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 			}
 			if nx {
 				// 加锁成功 处理缓存
-				go setLock(cacheLockChan, true)
+				fmt.Println("获取到锁")
+				cacheLockChanMap[cacheKey] = make(chan bool)
+				go setLock(cacheLockChanMap[cacheKey], true)
 				tmp = fn()
-				if setErr := redis_cache.Set(cacheKey, tmp, expireTime); setErr != nil {
+				var buffer bytes.Buffer
+				enc := gob.NewEncoder(&buffer)
+				enErr := enc.Encode(tmp)
+				if enErr != nil {
+					globalLogger.Errorf("编码失败: %s", enErr.Error())
+				}
+				time.Sleep(time.Second * 5)
+				if setErr := redis_cache.Set(cacheKey, buffer.Bytes(), expireTime); setErr != nil {
 					globalLogger.Errorf("缓存插入失败: %s", setErr.Error())
 				}
+
 				// 删除锁
 				if rmLockErr := redis_cache.Remove(cacheKey + lockStr); rmLockErr != nil {
 					globalLogger.Errorf("删除锁失败: %s", rmLockErr.Error())
 				}
-				go setLock(cacheLockChan, false)
+				go setLock(cacheLockChanMap[cacheKey], false)
 				return tmp
 			} else {
 				// 等待锁释放
 				for {
-					if !getLock(cacheLockChan) {
-						_ = redis_cache.GetScan(cacheKey, &tmp)
+					if !getLock(cacheLockChanMap[cacheKey]) {
+						_ = redis_cache.GetDecode(cacheKey, &tmp)
+						fmt.Println("已解锁！！！！！！！！！！！！！！！！！！")
+						delete(cacheLockChanMap, cacheKey)
 						break
+					} else {
+						fmt.Println("等待解锁")
 					}
 				}
 
