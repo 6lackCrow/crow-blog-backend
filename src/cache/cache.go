@@ -7,7 +7,6 @@ import (
 	"crow-blog-backend/src/consts/cache_opt"
 	globalLogger "crow-blog-backend/src/logger"
 	"encoding/gob"
-	"fmt"
 	"github.com/redis/go-redis/v9"
 	"time"
 )
@@ -49,7 +48,6 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 			}
 			if nx {
 				// 加锁成功 处理缓存
-				fmt.Println("获取到锁")
 				cacheLockChanMap[cacheKey] = make(chan bool)
 				go setLock(cacheLockChanMap[cacheKey], true)
 				tmp = fn()
@@ -59,7 +57,6 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 				if enErr != nil {
 					globalLogger.Errorf("编码失败: %s", enErr.Error())
 				}
-				time.Sleep(time.Second * 5)
 				if setErr := redis_cache.Set(cacheKey, buffer.Bytes(), expireTime); setErr != nil {
 					globalLogger.Errorf("缓存插入失败: %s", setErr.Error())
 				}
@@ -75,11 +72,8 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 				for {
 					if !getLock(cacheLockChanMap[cacheKey]) {
 						_ = redis_cache.GetDecode(cacheKey, &tmp)
-						fmt.Println("已解锁！！！！！！！！！！！！！！！！！！")
 						delete(cacheLockChanMap, cacheKey)
 						break
-					} else {
-						fmt.Println("等待解锁")
 					}
 				}
 
