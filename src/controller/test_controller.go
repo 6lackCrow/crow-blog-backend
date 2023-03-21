@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"crow-blog-backend/src/consts/cache_opt"
 	"crow-blog-backend/src/service"
 	"crow-blog-backend/src/utils/result"
 	"github.com/kataras/iris/v12"
@@ -22,5 +21,5 @@ func (p *TestController) Get() *result.Result {
 	resultFn := func() *result.Result {
 		return result.Success(p.Ctx.Values().GetString("language"), p.TestService.GetTestArr())
 	}
-	return result.WriteLogAndCacheableResult(p.Ctx, "", cache_opt.Select, resultFn)
+	return result.WriteLogResult(p.Ctx, resultFn)
 }

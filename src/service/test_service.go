@@ -1,6 +1,10 @@
 package service
 
-import "crow-blog-backend/src/repository"
+import (
+	"crow-blog-backend/src/cache"
+	"crow-blog-backend/src/consts/cache_opt"
+	"crow-blog-backend/src/repository"
+)
 
 type TestService struct {
 	TestRepository *repository.TestRepository
@@ -13,5 +17,7 @@ func NewTestService() *TestService {
 }
 
 func (t TestService) GetTestArr() []string {
-	return t.TestRepository.GetTestArr()
+	return cache.Cacheable("asdada", cache_opt.Select, func() interface{} {
+		return t.TestRepository.GetTestArr()
+	}).([]string)
 }
