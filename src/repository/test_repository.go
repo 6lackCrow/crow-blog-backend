@@ -24,5 +24,6 @@ func (t TestRepository) GetTestStr() string {
 }
 
 func (t TestRepository) GetTestNum() int {
+	fmt.Println("直接执行的repository")
 	return 5
 }

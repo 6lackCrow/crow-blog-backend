@@ -17,20 +17,20 @@ func NewTestService() *TestService {
 	}
 }
 
-func (t TestService) GetTestArr(key string) []string {
-	return cache.Cacheable[[]string](key, cache_opt.Select, 20*time.Minute, func() []string {
+func (t TestService) GetTestArr() []string {
+	return cache.Cacheable[[]string]("arr", cache_opt.Select, 20*time.Minute, func() []string {
 		return t.TestRepository.GetTestArr()
 	})
 }
 
-func (t TestService) GetTestStr(key string) string {
-	return cache.Cacheable[string](key, cache_opt.Select, 20*time.Minute, func() string {
+func (t TestService) GetTestStr() string {
+	return cache.Cacheable[string]("str", cache_opt.Select, 20*time.Minute, func() string {
 		return t.TestRepository.GetTestStr()
 	})
 }
 
-func (t TestService) GetTestNum(key string) int {
-	return cache.Cacheable[int](key, cache_opt.Select, 20*time.Minute, func() int {
+func (t TestService) GetTestNum() int {
+	return cache.Cacheable[int]("num", cache_opt.Select, 20*time.Minute, func() int {
 		return t.TestRepository.GetTestNum()
 	})
 }
