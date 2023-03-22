@@ -76,7 +76,12 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 				for {
 					if !getLock(cacheKey) {
 						if deErr := redis_cache.GetDecode(cacheKey, &tmp); deErr != nil {
-							globalLogger.Errorf("获取缓存失败: %s", deErr.Error())
+							if deErr == redis.Nil {
+								globalLogger.Errorf("不存在key: %s", deErr.Error())
+							} else {
+								globalLogger.Errorf("获取缓存失败: %s", deErr.Error())
+							}
+							tmp = fn()
 						}
 						cacheLockChanMap.Delete(cacheKey)
 						break
