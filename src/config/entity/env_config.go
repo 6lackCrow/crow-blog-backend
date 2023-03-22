@@ -22,7 +22,6 @@ type EnvConfig struct {
 			Address  string `yaml:"address"`
 			Password string `yaml:"password"`
 			Db       int    `yaml:"db"`
-			PoolSize int    `yaml:"pool-size"`
 		} `yaml:"redis"`
 	} `yaml:"cache"`
 }

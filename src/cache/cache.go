@@ -8,17 +8,22 @@ import (
 	globalLogger "crow-blog-backend/src/logger"
 	"encoding/gob"
 	"github.com/redis/go-redis/v9"
+	"sync"
 	"time"
 )
 
-var cacheLockChanMap = map[string]chan bool{}
+var cacheLockChanMap sync.Map
 
-func getLock(ch chan bool) bool {
-	return <-ch
+func getLock(key string) bool {
+	boolCh, ok := cacheLockChanMap.Load(key)
+	if ok {
+		return boolCh.(bool)
+	}
+	return ok
 }
 
-func setLock(ch chan bool, lock bool) {
-	ch <- lock
+func setLock(key string, lock bool) {
+	cacheLockChanMap.Store(key, lock)
 }
 
 // Cacheable 需要解决的问题: 1.缓存击穿 2.缓存穿透 3.缓存雪崩
@@ -48,8 +53,7 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 			}
 			if nx {
 				// 加锁成功 处理缓存
-				cacheLockChanMap[cacheKey] = make(chan bool)
-				go setLock(cacheLockChanMap[cacheKey], true)
+				setLock(cacheKey, true)
 				tmp = fn()
 				var buffer bytes.Buffer
 				enc := gob.NewEncoder(&buffer)
@@ -65,14 +69,14 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 				if rmLockErr := redis_cache.Remove(cacheKey + lockStr); rmLockErr != nil {
 					globalLogger.Errorf("删除锁失败: %s", rmLockErr.Error())
 				}
-				go setLock(cacheLockChanMap[cacheKey], false)
+				setLock(cacheKey, false)
 				return tmp
 			} else {
 				// 等待锁释放
 				for {
-					if !getLock(cacheLockChanMap[cacheKey]) {
+					if !getLock(cacheKey) {
 						_ = redis_cache.GetDecode(cacheKey, &tmp)
-						delete(cacheLockChanMap, cacheKey)
+						cacheLockChanMap.Delete(cacheKey)
 						break
 					}
 				}
