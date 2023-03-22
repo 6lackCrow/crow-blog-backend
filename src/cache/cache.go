@@ -96,11 +96,12 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 			//	return tmp
 		}
 	case cache_opt.Remove:
+		tmp = fn()
 		//一般用于修改 更新 删除方法 - 删除对应的缓存
 		if err := redis_cache.Remove(cacheKey); err != nil {
 			globalLogger.Errorf("删除缓存出错: %s", err.Error())
 		}
-		tmp = fn()
+
 	default:
 		tmp = fn() // 不操作缓存,直接执行相应逻辑
 	}
