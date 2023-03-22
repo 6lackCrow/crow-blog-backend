@@ -75,7 +75,9 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 				// 等待锁释放
 				for {
 					if !getLock(cacheKey) {
-						_ = redis_cache.GetDecode(cacheKey, &tmp)
+						if deErr := redis_cache.GetDecode(cacheKey, &tmp); deErr != nil {
+							globalLogger.Errorf("获取缓存失败: %s", deErr.Error())
+						}
 						cacheLockChanMap.Delete(cacheKey)
 						break
 					}
@@ -95,6 +97,9 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 		}
 	case cache_opt.Remove:
 		//一般用于修改 更新 删除方法 - 删除对应的缓存
+		if err := redis_cache.Remove(cacheKey); err != nil {
+			globalLogger.Errorf("删除缓存出错: %s", err.Error())
+		}
 		tmp = fn()
 	default:
 		tmp = fn() // 不操作缓存,直接执行相应逻辑
