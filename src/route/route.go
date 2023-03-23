@@ -8,7 +8,11 @@ import (
 )
 
 func InitRoute(app *iris.Application) {
-	app.UseGlobal(middleware.CorsMiddleware, middleware.I18nMiddleware)
+	app.UseGlobal(middleware.CorsMiddleware,
+		middleware.I18nMiddleware,
+		middleware.ExceptionMiddleware,
+		middleware.WriteLogMiddleware)
 	baseUrl := "/api/v1"
 	mvc.New(app.Party(baseUrl + "/test")).Handle(controller.NewTestController())
+	mvc.New(app.Party(baseUrl + "/user")).Handle(controller.NewUserController())
 }

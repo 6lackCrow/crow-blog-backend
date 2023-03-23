@@ -17,6 +17,6 @@ func NewUserController() *UserController {
 	}
 }
 
-func GetMyInfo() *result.Result {
-	return new(result.Result)
+func (u UserController) GetMyInfo() *result.Result {
+	return result.Success("", u.UserService.GetMyInfo())
 }
