@@ -12,6 +12,7 @@ import (
 
 func WriteLogMiddleware(ctx iris.Context) {
 	start := time.Now().UnixMilli()
+	ctx.Values().Set("startTimestamp", start)
 	requestDateTime := time.UnixMilli(start).Format("2006-01-02 15:04:05")
 	method := ctx.Method()
 	fullUri := ctx.FullRequestURI()
@@ -27,6 +28,16 @@ func WriteLogMiddleware(ctx iris.Context) {
 	ctx.Next()
 	end := time.Now().UnixMilli()
 	responseDateTime := time.UnixMilli(end).Format("2006-01-02 15:04:05")
+	resStr := string(ctx.Recorder().Body())
+
+	reqIp := getIpByContext(ctx)
+	resp := &result.Result{}
+	_ = json.Unmarshal([]byte(resStr), resp)
+	outLog(resp.Code, reqIp, fullUri, method, bodyStr, resStr, requestDateTime, responseDateTime, end-start)
+
+}
+
+func getIpByContext(ctx iris.Context) string {
 	xForwardedFor := ctx.GetHeader("X-Forwarded-For")
 
 	reqIp := strings.TrimSpace(strings.Split(xForwardedFor, ",")[0])
@@ -39,19 +50,19 @@ func WriteLogMiddleware(ctx iris.Context) {
 	if reqIp == "" {
 		reqIp = "unknown"
 	}
-	resStr := string(ctx.Recorder().Body())
-	template := "reqIp: %s, reqUrl: %s, method: %s, reqBody: %s, respBody: %s, reqDateTime: %s, respDateTime: %s, costTime: %d"
+	return reqIp
+}
 
-	resp := &result.Result{}
-	_ = json.Unmarshal([]byte(resStr), resp)
-	if resp.Code == resultType.Success {
+func outLog(code int, reqIp, fullUri, method, bodyStr, resStr, requestDateTime, responseDateTime string, costTime int64) {
+	template := "reqIp: %s, reqUrl: %s, method: %s, reqBody: %s, respBody: %s, reqDateTime: %s, respDateTime: %s, costTime: %d"
+	if code == resultType.Success {
 		// 记录成功日志
-		globalLogger.Infof(template, reqIp, fullUri, method, bodyStr, resStr, requestDateTime, responseDateTime, end-start)
-	} else if resp.Code == resultType.Error {
+		globalLogger.Infof(template, reqIp, fullUri, method, bodyStr, resStr, requestDateTime, responseDateTime, costTime)
+	} else if code == resultType.Error {
 		// 记录系统级别的错误
-		globalLogger.Errorf(template, reqIp, fullUri, method, bodyStr, resStr, requestDateTime, responseDateTime, end-start)
+		globalLogger.Errorf(template, reqIp, fullUri, method, bodyStr, resStr, requestDateTime, responseDateTime, costTime)
 	} else {
 		// 记录业务级别的错误
-		globalLogger.Warnf(template, reqIp, fullUri, method, bodyStr, resStr, requestDateTime, responseDateTime, end-start)
+		globalLogger.Warnf(template, reqIp, fullUri, method, bodyStr, resStr, requestDateTime, responseDateTime, costTime)
 	}
 }

@@ -11,6 +11,7 @@ import (
 func main() {
 	config.InitConfig()
 	irisInstance := iris.New()
+
 	if err := irisInstance.I18n.Load("./locales/*/*", "en-US", "zh-CN"); err != nil {
 		globalLogger.Error("Failed load i18n")
 	}

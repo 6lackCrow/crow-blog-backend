@@ -13,6 +13,8 @@ func InitRoute(app *iris.Application) {
 		middleware.ExceptionMiddleware,
 		middleware.WriteLogMiddleware)
 	baseUrl := "/api/v1"
+
 	mvc.New(app.Party(baseUrl + "/test")).Handle(controller.NewTestController())
+
 	mvc.New(app.Party(baseUrl + "/user")).Handle(controller.NewUserController())
 }

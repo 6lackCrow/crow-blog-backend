@@ -23,15 +23,15 @@ func Success(language string, data interface{}) *Result {
 	i18nTr := config.GetApp().I18n
 	return &Result{
 		Code:    resultType.Success,
-		Message: i18nTr.Tr(language, resultType.GetKeyByCode(2000)),
+		Message: i18nTr.Tr(language, resultType.GetKeyByCode(resultType.Success)),
 		Data:    data,
 	}
 }
 
-func Failed(message string) *Result {
+func Failed(msg string) *Result {
 	return &Result{
 		Code:    resultType.Error,
-		Message: message,
+		Message: msg,
 	}
 }
 

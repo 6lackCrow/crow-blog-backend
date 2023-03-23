@@ -12,7 +12,7 @@ func NewUserRepository() *UserRepository {
 	return &UserRepository{}
 }
 
-func (r UserRepository) GetMyInfo() (*entity.User, error) {
+func (r UserRepository) GetAdminUser() (*entity.User, error) {
 	db := config.GetDatabaseInstance()
 	user := &entity.User{}
 	err := db.First(user).Error

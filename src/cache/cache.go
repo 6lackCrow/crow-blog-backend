@@ -26,6 +26,13 @@ func setLock(key string, lock bool) {
 	cacheLockChanMap.Store(key, lock)
 }
 
+func UnLock(cacheKey string) {
+	lock := "----lock"
+	_ = redis_cache.Remove(cacheKey + lock)
+	setLock(cacheKey, false)
+	cacheLockChanMap.Delete(cacheKey)
+}
+
 // Cacheable 需要解决的问题: 1.缓存击穿 2.缓存穿透 3.缓存雪崩
 func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, fn func() T) T {
 	if !config.GetEnvConfig().Cache.Use {

@@ -125,7 +125,7 @@ func initGlobalLogger() {
 		zapcore.NewCore(encoder, zapcore.AddSync(warnWriter), warnLevel),
 		zapcore.NewCore(encoder, zapcore.AddSync(errorWriter), errorLevel),
 	)
-	globalLogger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1)).Sugar()
+	globalLogger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(0)).Sugar()
 }
 
 func GetDatabaseInstance() *gorm.DB {
