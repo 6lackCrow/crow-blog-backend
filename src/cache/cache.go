@@ -1,12 +1,10 @@
 package cache
 
 import (
-	"bytes"
 	"crow-blog-backend/src/cache/redis_cache"
 	"crow-blog-backend/src/config"
 	"crow-blog-backend/src/consts/cache_opt"
 	globalLogger "crow-blog-backend/src/logger"
-	"encoding/gob"
 	"github.com/redis/go-redis/v9"
 	"sync"
 	"time"
@@ -41,7 +39,7 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 	var tmp T
 	switch cacheOpt {
 	case cache_opt.Select:
-		err := redis_cache.GetDecode(cacheKey, &tmp)
+		err := redis_cache.CustomGet(cacheKey, &tmp)
 
 		switch {
 		case err == redis.Nil:
@@ -62,13 +60,7 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 				// 加锁成功 处理缓存
 				setLock(cacheKey, true)
 				tmp = fn()
-				var buffer bytes.Buffer
-				enc := gob.NewEncoder(&buffer)
-				enErr := enc.Encode(tmp)
-				if enErr != nil {
-					globalLogger.Errorf("编码失败: %s", enErr.Error())
-				}
-				if setErr := redis_cache.Set(cacheKey, buffer.Bytes(), expireTime); setErr != nil {
+				if setErr := redis_cache.CustomSet(cacheKey, tmp, expireTime); setErr != nil {
 					globalLogger.Errorf("缓存插入失败: %s", setErr.Error())
 				}
 
@@ -82,7 +74,7 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 				// 等待锁释放
 				for {
 					if !getLock(cacheKey) {
-						if deErr := redis_cache.GetDecode(cacheKey, &tmp); deErr != nil {
+						if deErr := redis_cache.CustomGet(cacheKey, &tmp); deErr != nil {
 							if deErr == redis.Nil {
 								globalLogger.Errorf("不存在key: %s", deErr.Error())
 							} else {

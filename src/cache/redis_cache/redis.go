@@ -5,6 +5,7 @@ import (
 	"context"
 	config "crow-blog-backend/src/config"
 	"encoding/gob"
+	"encoding/json"
 	"time"
 )
 
@@ -18,6 +19,26 @@ func GetScan(key string, v interface{}) error {
 	client := config.GetRedisClient()
 	ctx := context.Background()
 	return client.Get(ctx, key).Scan(v)
+}
+
+func CustomGet(key string, v interface{}) error {
+	str, err := Get(key)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal([]byte(str), v)
+	if err != nil {
+		v = str
+	}
+	return nil
+}
+
+func CustomSet(key string, value interface{}, expireTime time.Duration) error {
+	jsonByte, err := json.Marshal(value)
+	if err != nil {
+		return Set(key, value, expireTime)
+	}
+	return Set(key, string(jsonByte), expireTime)
 }
 
 func GetDecode(key string, v interface{}) error {
