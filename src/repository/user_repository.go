@@ -19,10 +19,10 @@ func (r UserRepository) GetAdminUser() (*entity.User, error) {
 	return user, err
 }
 
-func (r UserRepository) GetLinks(userId uint) ([]entity.Link, error) {
-	var links []entity.Link
+func (r UserRepository) GetLinkDTOs(userId uint) ([]entity.LinkDTO, error) {
+	var links []entity.LinkDTO
 	db := config.GetDatabaseInstance()
-	err := db.Where("user_id = ?", userId).Find(&links).Error
+	err := db.Model(&entity.Link{}).Where("user_id = ?", userId).Find(&links).Error
 	if err != nil {
 		return links, err
 	}

@@ -40,7 +40,6 @@ func Cacheable[T any](cacheKey string, cacheOpt int, expireTime time.Duration, f
 	switch cacheOpt {
 	case cache_opt.Select:
 		err := redis_cache.CustomGet(cacheKey, &tmp)
-
 		switch {
 		case err == redis.Nil:
 			// key不存在 添加缓存 需要处理缓存击穿、缓存雪崩问题

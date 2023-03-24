@@ -26,14 +26,14 @@ func (s UserService) GetMyInfo() vo.MyInfo {
 			panic("查询数据库失败")
 		}
 		info := vo.MyInfo{
-			Avatar:        user.AvatarUrl,
+			AvatarUrl:     user.AvatarUrl,
 			Nickname:      user.Nickname,
 			Slogan:        user.Slogan,
 			ArticleCount:  user.ArticleCount,
 			CategoryCount: user.CategoryCount,
 			TagCount:      user.TagCount,
 		}
-		links, err := s.UserRepository.GetLinks(user.ID)
+		links, err := s.UserRepository.GetLinkDTOs(user.ID)
 		if err != nil {
 			cache.UnLock("myInfo-cacheKey")
 			panic("查询数据库失败")
